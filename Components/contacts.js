@@ -86,7 +86,11 @@ class ContactsView extends Component {
       .then((response) => {
         console.log(response);
         if (response.status === 200) {
-          return response.json();
+          console.log(responseJson);
+          this.setState({ isAddUserModalVisible: false });
+
+          this.getData();
+          console.log("Contact Added");
         } else if (response.status === 400) {
           this.setState({
             error: "You can't add yourself as a contact",
@@ -106,13 +110,6 @@ class ContactsView extends Component {
           this.setState({ error: "something went wrong" });
           throw "something went wrong";
         }
-      })
-      .then((responseJson) => {
-        console.log(responseJson);
-        this.setState({ isAddUserModalVisible: false });
-
-        this.getData();
-        console.log("Contact Added");
       })
       .catch((error) => {
         console.log(error);
