@@ -84,13 +84,18 @@ class ContactsView extends Component {
       }
     )
       .then((response) => {
-        console.log(response);
         if (response.status === 200) {
-          console.log(responseJson);
-          this.setState({ isAddUserModalVisible: false });
-
-          this.getData();
-          console.log("Contact Added");
+          response.text().then((text) => {
+            console.log(text);
+            if (text === "Already a contact") {
+              this.setState({
+                error: "Already a contact",
+              });
+            } else {
+              this.setState({ isAddUserModalVisible: false });
+              this.getData();
+            }
+          });
         } else if (response.status === 400) {
           this.setState({
             error: "You can't add yourself as a contact",
