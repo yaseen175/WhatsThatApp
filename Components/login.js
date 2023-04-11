@@ -67,8 +67,13 @@ export default class LoginScreen extends Component {
         if (response.status === 200) {
           return response.json();
         } else if (response.status === 400) {
-          throw "failed validation";
+          this.setState({
+            error: "Invalid email / password supplied",
+          });
         } else {
+          this.setState({
+            error: "something went wrong",
+          });
           throw "something went wrong";
         }
       })

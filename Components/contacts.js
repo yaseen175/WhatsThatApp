@@ -86,7 +86,6 @@ class ContactsView extends Component {
       .then((response) => {
         if (response.status === 200) {
           response.text().then((text) => {
-            console.log(text);
             if (text === "Already a contact") {
               this.setState({
                 error: "Already a contact",
