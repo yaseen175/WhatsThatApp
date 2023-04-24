@@ -129,7 +129,12 @@ class ChatListScreen extends Component {
     return (
       <TouchableOpacity onPress={() => this.onChatPress(chat)}>
         <View style={styles.chatItem}>
-          <Image style={styles.avatar} source={chat.avatar} />
+          <Image
+            style={styles.image}
+            source={{
+              uri: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+            }}
+          />
           <View style={styles.chatInfo}>
             <Text style={styles.chatName}>{chat.name}</Text>
             <Text style={styles.lastMessage}>{chat.last_message.message}</Text>
@@ -305,6 +310,12 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     marginBottom: 10,
+  },
+  image: {
+    width: 45,
+    height: 45,
+    borderRadius: 20,
+    marginLeft: 20,
   },
   buttonText: {
     color: "white",

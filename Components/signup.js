@@ -67,7 +67,13 @@ export default class SignUpScreen extends Component {
     })
       .then((response) => {
         if (response.status === 201) {
-          return response.json();
+          if (this.state.submitted && this.state.firstName === "") {
+            this.setState({ error: "You must enter first name" });
+          } else if (this.state.submitted && !this.state.lastName) {
+            this.setState({ error: "You must enter last name" });
+          } else {
+            return response.json();
+          }
         } else if (response.status === 400) {
           this.setState({ error: "failed validation please try again" });
           throw "failed validation";

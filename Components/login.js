@@ -78,7 +78,6 @@ export default class LoginScreen extends Component {
         }
       })
       .then(async (responseJson) => {
-        console.log(responseJson);
         try {
           await AsyncStorage.setItem("whatsthat_user_id", responseJson.id);
           await AsyncStorage.setItem(
