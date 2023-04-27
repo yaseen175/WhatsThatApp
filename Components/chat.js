@@ -98,28 +98,6 @@ class ChatListScreen extends Component {
       });
   }
 
-  //   async createNewChat() {
-  //     return fetch("http://localhost:3333/api/1.0.0/chat", {
-  //       method: "POST",
-  //       headers: {
-  //         "X-Authorization": await AsyncStorage.getItem(
-  //           "whatsthat_session_token"
-  //         ),
-  //       },
-  //     })
-  //       .then((response) => response.json())
-  //       .then((responseJson) => {
-  //         console.log(responseJson);
-  //         this.setState({
-  //           isLoading: false,
-  //           chatData: responseJson,
-  //         });
-  //       })
-  //       .catch((error) => {
-  //         console.log(error);
-  //       });
-  //   }
-
   onChatPress(chat) {
     console.log("clicked");
     this.props.navigation.navigate("ChatScreen", { chat });

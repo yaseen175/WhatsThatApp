@@ -222,66 +222,7 @@ class ContactsView extends Component {
         onPress={() => this.setState({ showModal: true, selectedC: item })}
         style={styles.notificationBox}
       >
-        <Image
-          style={styles.image}
-          source={{
-            uri: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
-          }}
-        />
         <Text style={styles.name}>{item.first_name}</Text>
-        <Modal visible={this.state.showModal} animationType="slide">
-          <View style={styles.mContainer}>
-            <View style={styles.mAvatarContainer}>
-              <Image
-                source={{
-                  uri: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
-                }}
-                style={styles.mAvatar}
-              />
-              <Text style={styles.mName}> {selectedC.first_name}</Text>
-            </View>
-
-            <View style={styles.mInfoContainer}>
-              <Text style={styles.mInfoLabel}>First Name:</Text>
-              <Text style={styles.mInfoValue}>{selectedC.first_name}</Text>
-              {console.log(selectedC)}
-            </View>
-            <View style={styles.mInfoContainer}>
-              <Text style={styles.mInfoLabel}>Last Name:</Text>
-              <Text style={styles.mInfoValue}>{selectedC.last_name}</Text>
-            </View>
-            <View style={styles.mInfoContainer}>
-              <Text style={styles.mInfoLabel}>Email:</Text>
-              <Text style={styles.mInfoValue}>{selectedC.email}</Text>
-            </View>
-
-            <View style={styles.modalButtons}>
-              <View style={styles.actionButton}>
-                <TouchableOpacity
-                  onPress={() => {
-                    this.props.onDelete(item.user_id);
-                    this.hideAlert();
-                  }}
-                >
-                  <MaterialIcons name="delete" size={24} color="black" />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.actionButton}>
-                <TouchableOpacity
-                  onPress={() => {
-                    this.props.onBlock(item.user_id);
-                    this.hideAlert();
-                  }}
-                >
-                  <MaterialIcons name="block" size={24} color="black" />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <TouchableOpacity onPress={this.hideAlert}>
-              <Text style={styles.backButton}>Back</Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
         <Menu>
           <MenuTrigger>
             <Text style={styles.menuIcon}>...</Text>
@@ -297,10 +238,12 @@ class ContactsView extends Component {
             />
           </MenuOptions>
         </Menu>
+        {this.renderModal(selectedC)}
       </TouchableOpacity>
     );
   };
 
+  // Renders a blocked contact item
   renderBlockContact = (item) => {
     const { selectedC } = this.state;
 
@@ -309,7 +252,6 @@ class ContactsView extends Component {
         onPress={() => this.setState({ showModal: true, selectedC: item })}
         style={styles.notificationBox}
       >
-        {console.log(selectedC)}
         <Image
           style={styles.image}
           source={{
@@ -317,113 +259,71 @@ class ContactsView extends Component {
           }}
         />
         <Text style={styles.name}>{item.first_name}</Text>
-        <Modal visible={this.state.showModal} animationType="slide">
-          <View style={styles.mContainer}>
-            <View style={styles.mAvatarContainer}>
-              <Image
-                source={{
-                  uri: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
-                }}
-                style={styles.mAvatar}
-              />
-              <Text style={styles.mName}> {selectedC.first_name}</Text>
-            </View>
-
-            <View style={styles.mInfoContainer}>
-              <Text style={styles.mInfoLabel}>First Name:</Text>
-              <Text style={styles.mInfoValue}>{selectedC.first_name}</Text>
-            </View>
-            <View style={styles.mInfoContainer}>
-              <Text style={styles.mInfoLabel}>Last Name:</Text>
-              <Text style={styles.mInfoValue}>{selectedC.last_name}</Text>
-            </View>
-            <View style={styles.mInfoContainer}>
-              <Text style={styles.mInfoLabel}>Email:</Text>
-              <Text style={styles.mInfoValue}>{selectedC.email}</Text>
-            </View>
-
-            <View style={styles.modalButtons}>
-              <View style={styles.actionButton}>
-                <TouchableOpacity
-                  onPress={() => {
-                    this.props.onDelete(item.user_id);
-                    this.hideAlert();
-                  }}
-                >
-                  <MaterialIcons name="delete" size={24} color="black" />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.actionButton}>
-                <TouchableOpacity
-                  onPress={() => {
-                    this.props.onBlock(item.user_id);
-                    this.hideAlert();
-                  }}
-                >
-                  <MaterialIcons name="block" size={24} color="black" />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <TouchableOpacity onPress={this.hideAlert}>
-              <Text style={styles.backButton}>Back</Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
-        <Menu>
-          <MenuTrigger>
-            <Text style={styles.menuIcon}>...</Text>
-          </MenuTrigger>
-          <MenuOptions>
-            <MenuOption
-              onSelect={() => this.deleteContact(item.user_id)}
-              text="Delete"
-            />
-            <MenuOption
-              onSelect={() => this.unblockContact(item.user_id)}
-              text="Unblock"
-            />
-          </MenuOptions>
-        </Menu>
+        {this.renderModal(selectedC)}
       </TouchableOpacity>
+    );
+  };
+
+  renderModal = (selectedC) => {
+    return (
+      <Modal visible={this.state.showModal} animationType="slide">
+        <View style={styles.mContainer}>
+          <View style={styles.mAvatarContainer}>
+            <Image
+              source={{
+                uri: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+              }}
+              style={styles.mAvatar}
+            />
+            <Text style={styles.mName}> {selectedC.first_name}</Text>
+          </View>
+
+          <View style={styles.mInfoContainer}>
+            <Text style={styles.mInfoLabel}>First Name:</Text>
+            <Text style={styles.mInfoValue}>{selectedC.first_name}</Text>
+            {console.log(selectedC)}
+          </View>
+          <View style={styles.mInfoContainer}>
+            <Text style={styles.mInfoLabel}>Last Name:</Text>
+            <Text style={styles.mInfoValue}>{selectedC.last_name}</Text>
+          </View>
+          <View style={styles.mInfoContainer}>
+            <Text style={styles.mInfoLabel}>Email:</Text>
+            <Text style={styles.mInfoValue}>{selectedC.email}</Text>
+          </View>
+
+          <View style={styles.modalButtons}>
+            <View style={styles.actionButton}>
+              <TouchableOpacity
+                onPress={() => {
+                  this.props.onDelete(item.user_id);
+                  this.hideAlert();
+                }}
+              >
+                <MaterialIcons name="delete" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.actionButton}>
+              <TouchableOpacity
+                onPress={() => {
+                  this.props.onBlock(item.user_id);
+                  this.hideAlert();
+                }}
+              >
+                <MaterialIcons name="block" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <TouchableOpacity onPress={this.hideAlert}>
+            <Text style={styles.backButton}>Back</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     );
   };
 
   hideAlert = () => {
     this.setState({ showModal: false });
-  };
-  renderAddContactModal = () => {
-    return (
-      <Modal
-        visible={this.state.modalVisible}
-        animationType={"slide"}
-        onRequestClose={() => this.setState({ modalVisible: false })}
-      >
-        <View style={styles.addModalContainer}>
-          <View style={styles.addModalContent}>
-            <TextInput
-              style={styles.addModalInput}
-              placeholder="Enter contact ID"
-              onChangeText={(id) => this.setState({ id })}
-            />
-            <TouchableOpacity
-              style={styles.addModalButton}
-              onPress={() => {
-                this.addContact();
-                this.setState({ modalVisible: false });
-              }}
-            >
-              <Text style={styles.addModalButtonText}>Add</Text>
-            </TouchableOpacity>
-            <Button
-              title="Cancel"
-              onPress={() => {
-                this.setState({ modalVisible: false });
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
-    );
   };
 
   render() {
@@ -526,107 +426,6 @@ class ContactsView extends Component {
               renderItem={({ item }) => this.renderBlockContact(item)}
               keyExtractor={(item) => item.user_id}
             />
-            {/* <FlatList
-              style={styles.notificationList}
-              data={this.state.contactsData}
-              keyExtractor={(item) => item.user_id}
-              renderItem={({ item }) => {
-                return (
-                  <TouchableOpacity
-                    onPress={this.showAlert}
-                    style={styles.notificationBox}
-                  >
-                    <Image
-                      style={styles.image}
-                      source={{
-                        uri: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
-                      }}
-                    />
-                    <Text style={styles.name}>{item.first_name}</Text>
-                    <Modal visible={this.state.showModal} animationType="slide">
-                      <View style={styles.mContainer}>
-                        <View style={styles.mAvatarContainer}>
-                          <Image
-                            source={{
-                              uri: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
-                            }}
-                            style={styles.mAvatar}
-                          />
-                          <Text style={styles.mName}> {item.first_name}</Text>
-                        </View>
-
-                        <View style={styles.mInfoContainer}>
-                          <Text style={styles.mInfoLabel}>First Name:</Text>
-                          <Text style={styles.mInfoValue}>
-                            {item.first_name}
-                            {console.log(item.first_name)}
-                          </Text>
-                        </View>
-                        <View style={styles.mInfoContainer}>
-                          <Text style={styles.mInfoLabel}>Last Name:</Text>
-                          <Text style={styles.mInfoValue}>
-                            {item.last_name}
-                          </Text>
-                        </View>
-                        <View style={styles.mInfoContainer}>
-                          <Text style={styles.mInfoLabel}>Email:</Text>
-                          <Text style={styles.mInfoValue}>{item.email}</Text>
-                        </View>
-
-                        <View style={styles.modalButtons}>
-                          <View style={styles.actionButton}>
-                            <TouchableOpacity
-                              onPress={() => {
-                                this.props.onDelete(item.user_id);
-                                this.hideAlert();
-                              }}
-                            >
-                              <MaterialIcons
-                                name="delete"
-                                size={24}
-                                color="black"
-                              />
-                            </TouchableOpacity>
-                          </View>
-                          <View style={styles.actionButton}>
-                            <TouchableOpacity
-                              onPress={() => {
-                                this.props.onBlock(item.user_id);
-                                this.hideAlert();
-                              }}
-                            >
-                              <MaterialIcons
-                                name="block"
-                                size={24}
-                                color="black"
-                              />
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                        <TouchableOpacity onPress={this.hideAlert}>
-                          <Text style={styles.backButton}>Back</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </Modal>
-                    <Menu>
-                      <MenuTrigger>
-                        <Text style={styles.menuIcon}>...</Text>
-                      </MenuTrigger>
-                      <MenuOptions>
-                        <MenuOption
-                          onSelect={() => this.deleteContact(item.user_id)}
-                          text="Delete"
-                        />
-                        <MenuOption
-                          onSelect={() => this.blockContact(item.user_id)}
-                          text="Block"
-                        />
-                      </MenuOptions>
-                    </Menu>
-                  </TouchableOpacity>
-                );
-              }}
-            /> */}
           </View>
         </MenuProvider>
       );
