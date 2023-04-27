@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ActivityIndicator } from "react-native";
+import Icon from "react-native-vector-icons/FontAwesome";
 
 export default class HomeScreen extends Component {
   constructor(props) {
@@ -21,6 +22,7 @@ export default class HomeScreen extends Component {
       allUsers: [],
       isLoading: false,
       photos: {}, // Store user_id to profile image mapping
+      error: "",
     };
 
     this.handleSearch = this.handleSearch.bind(this);
@@ -84,6 +86,57 @@ export default class HomeScreen extends Component {
     }
   }
 
+  addContact = async (contact) => {
+    this.setState({ submitted: true, error: "" });
+    console.log(contact);
+
+    return fetch(
+      "http://localhost:3333/api/1.0.0/user/" + contact + "/contact/",
+      {
+        method: "POST",
+        headers: {
+          "X-Authorization": await AsyncStorage.getItem(
+            "whatsthat_session_token"
+          ),
+        },
+      }
+    )
+      .then((response) => {
+        if (response.status === 200) {
+          response.text().then((text) => {
+            if (text === "Already a contact") {
+              this.setState({
+                error: "Already a contact",
+              });
+            } else {
+              console.log("Successfully added");
+            }
+          });
+        } else if (response.status === 400) {
+          this.setState({
+            error: "You can't add yourself as a contact",
+          });
+          throw "You can't add yourself as a contact";
+        } else if (response.status === 401) {
+          this.setState({
+            error: "Unauthorized",
+          });
+          throw "Unauthorized";
+        } else if (response.status === 404) {
+          this.setState({
+            error: "Sorry Contact Not Found",
+          });
+          throw "Sorry Contact Not Found";
+        } else {
+          this.setState({ error: "something went wrong" });
+          throw "something went wrong";
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
   renderItem = ({ item }) => {
     const userId = item.user_id;
 
@@ -101,6 +154,14 @@ export default class HomeScreen extends Component {
           </Text>
           <Text style={styles.phoneText}>{item.email}</Text>
         </View>
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity onPress={() => this.addContact(userId)}>
+          <Icon
+            name="plus"
+            size={24}
+            style={{ marginRight: 10, color: "#20B2AA", fontWeight: "bold" }}
+          />
+        </TouchableOpacity>
       </View>
     );
   };
@@ -125,6 +186,14 @@ export default class HomeScreen extends Component {
             />
           </View>
         </View>
+        <View style={styles.errorContainer}>
+          <>
+            {this.state.error && (
+              <Text style={styles.error}>{this.state.error}</Text>
+            )}
+          </>
+        </View>
+
         {this.state.isLoading ? (
           <ActivityIndicator />
         ) : (
@@ -191,10 +260,25 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     borderBottomColor: "#FFFFFF",
     flex: 1,
+    color: "#20B2AA",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   inputIcon: {
     marginLeft: 15,
     justifyContent: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  error: {
+    color: "red",
+    fontWeight: "900",
+    alignItems: "center",
   },
 });
 
