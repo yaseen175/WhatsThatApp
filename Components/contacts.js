@@ -39,6 +39,8 @@ class ContactsView extends Component {
       selectedC: "",
       error: "",
       submitted: false,
+      photos: {},
+      allUsers: [],
     };
   }
 
@@ -48,77 +50,57 @@ class ContactsView extends Component {
   }
 
   async getData() {
+    const token = await AsyncStorage.getItem("whatsthat_session_token");
+
     return fetch("http://localhost:3333/api/1.0.0/contacts", {
       headers: {
-        "X-Authorization": await AsyncStorage.getItem(
-          "whatsthat_session_token"
-        ),
+        "X-Authorization": token,
       },
     })
       .then((response) => response.json())
-      .then((responseJson) => {
+      .then(async (responseJson) => {
+        // Fetch profile images for all users
+        const photos = {};
+        for (const user of responseJson) {
+          try {
+            const response = await fetch(
+              `http://localhost:3333/api/1.0.0/user/${user.user_id}/photo`,
+              {
+                method: "GET",
+                headers: {
+                  "X-Authorization": token,
+                },
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+
+            const blob = await response.blob();
+            const data = URL.createObjectURL(blob);
+            console.log(data);
+
+            photos[user.user_id] = data;
+          } catch (error) {
+            console.error(
+              `Error fetching profile image for user ${user.user_id}:`,
+              error
+            );
+          }
+        }
+
         this.setState({
           isLoading: false,
-          contactsData: responseJson,
+          allUsers: responseJson,
+          photos,
         });
       })
       .catch((error) => {
         console.log(error);
       });
   }
-  async createNewContact() {
-    this.setState({ submitted: true, error: "" });
-    this.setState({ isAddUserModalVisible: true });
 
-    return fetch(
-      "http://localhost:3333/api/1.0.0/user/" +
-        this.state.newContactId +
-        "/contact/",
-      {
-        method: "POST",
-        headers: {
-          "X-Authorization": await AsyncStorage.getItem(
-            "whatsthat_session_token"
-          ),
-        },
-      }
-    )
-      .then((response) => {
-        if (response.status === 200) {
-          response.text().then((text) => {
-            if (text === "Already a contact") {
-              this.setState({
-                error: "Already a contact",
-              });
-            } else {
-              this.setState({ isAddUserModalVisible: false });
-              this.getData();
-            }
-          });
-        } else if (response.status === 400) {
-          this.setState({
-            error: "You can't add yourself as a contact",
-          });
-          throw "You can't add yourself as a contact";
-        } else if (response.status === 401) {
-          this.setState({
-            error: "Unauthorized",
-          });
-          throw "Unauthorized";
-        } else if (response.status === 404) {
-          this.setState({
-            error: "Sorry Contact Not Found",
-          });
-          throw "Sorry Contact Not Found";
-        } else {
-          this.setState({ error: "something went wrong" });
-          throw "something went wrong";
-        }
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  }
   async deleteContact(contactId) {
     console.log(contactId);
     return fetch(
@@ -201,28 +183,62 @@ class ContactsView extends Component {
         console.log(error);
       });
   }
+  // async get_profile_image(imageId) {
+  //   console.log(imageId);
+  //   const sessionToken = await AsyncStorage.getItem("whatsthat_session_token");
 
-  handleSearch = (text) => {
-    console.log(text);
-    const newData = this.state.contactsData.filter((item) => {
-      const itemData = item.first_name.toUpperCase();
-      console.log(itemData);
-      const textData = text.toUpperCase();
-      console.log(textData);
-      return itemData.indexOf(textData) > -1;
-    });
-    this.setState({ results: newData, query: text });
-  };
+  //   try {
+  //     const response = await fetch(
+  //       "http://localhost:3333/api/1.0.0/user/" + imageId + "/photo",
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "X-Authorization": sessionToken,
+  //         },
+  //       }
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+
+  //     const blob = await response.blob();
+  //     const data = URL.createObjectURL(blob);
+
+  //     this.setState({
+  //       photo: data,
+  //       isLoading: false,
+  //     });
+  //   } catch (error) {
+  //     console.error("Error fetching profile image:", error);
+  //   }
+  // }
 
   renderContact = (item) => {
-    const { selectedC } = this.state;
+    const userId = item.user_id;
 
     return (
       <TouchableOpacity
-        onPress={() => this.setState({ showModal: true, selectedC: item })}
+        onPress={() => {
+          this.get_profile_image(item.user_id);
+          this.setState({ showModal: true, selectedC: item });
+        }}
         style={styles.notificationBox}
       >
-        <Text style={styles.name}>{item.first_name}</Text>
+        <View style={styles.itemContainer}>
+          <Image
+            style={styles.image}
+            source={{ uri: this.state.photos[userId] }}
+          />
+          <View style={styles.textContainer}>
+            <Text style={styles.nameText}>
+              {item.first_name}
+              {"  "}
+              {item.last_name}
+            </Text>
+            <Text style={styles.phoneText}>{item.email}</Text>
+          </View>
+        </View>
         <Menu>
           <MenuTrigger>
             <Text style={styles.menuIcon}>...</Text>
@@ -238,7 +254,7 @@ class ContactsView extends Component {
             />
           </MenuOptions>
         </Menu>
-        {this.renderModal(selectedC)}
+        {this.renderModal(item)}
       </TouchableOpacity>
     );
   };
@@ -246,19 +262,27 @@ class ContactsView extends Component {
   // Renders a blocked contact item
   renderBlockContact = (item) => {
     const { selectedC } = this.state;
+    const userId = item.user_id;
 
     return (
       <TouchableOpacity
         onPress={() => this.setState({ showModal: true, selectedC: item })}
         style={styles.notificationBox}
       >
-        <Image
-          style={styles.image}
-          source={{
-            uri: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
-          }}
-        />
-        <Text style={styles.name}>{item.first_name}</Text>
+        <View style={styles.itemContainer}>
+          <Image
+            style={styles.image}
+            source={{ uri: this.state.photos[userId] }}
+          />
+          <View style={styles.textContainer}>
+            <Text style={styles.nameText}>
+              {item.first_name}
+              {"  "}
+              {item.last_name}
+            </Text>
+            <Text style={styles.phoneText}>{item.email}</Text>
+          </View>
+        </View>
         {this.renderModal(selectedC)}
       </TouchableOpacity>
     );
@@ -271,7 +295,7 @@ class ContactsView extends Component {
           <View style={styles.mAvatarContainer}>
             <Image
               source={{
-                uri: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+                uri: this.state.photo,
               }}
               style={styles.mAvatar}
             />
@@ -281,7 +305,6 @@ class ContactsView extends Component {
           <View style={styles.mInfoContainer}>
             <Text style={styles.mInfoLabel}>First Name:</Text>
             <Text style={styles.mInfoValue}>{selectedC.first_name}</Text>
-            {console.log(selectedC)}
           </View>
           <View style={styles.mInfoContainer}>
             <Text style={styles.mInfoLabel}>Last Name:</Text>
@@ -415,7 +438,7 @@ class ContactsView extends Component {
               </View>
             </View>
             <FlatList
-              data={this.state.contactsData}
+              data={this.state.allUsers}
               renderItem={({ item }) => this.renderContact(item)}
               keyExtractor={(item) => item.user_id}
             />
@@ -671,5 +694,29 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     marginBottom: 10,
+  },
+  itemContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  image: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  textContainer: {
+    marginLeft: 16,
+  },
+  nameText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  phoneText: {
+    fontSize: 16,
+    color: "#999",
   },
 });
