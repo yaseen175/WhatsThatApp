@@ -10,7 +10,6 @@ import {
   TextInput,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import Icon from "react-native-vector-icons/FontAwesome";
 
 class ChatListScreen extends Component {
@@ -68,6 +67,7 @@ class ChatListScreen extends Component {
       .then((response) => response.json())
       .then((responseJson) => {
         console.log(responseJson);
+        this.setState({ isAddUserModalVisible: false });
         this.getAllChats();
       })
       .catch((error) => {
@@ -134,26 +134,6 @@ class ChatListScreen extends Component {
 
     return (
       <View style={styles.container}>
-        <View style={headerStyle}>
-          <TouchableOpacity
-            onPress={() => this.props.navigation.goBack()}
-            style={{ padding: 10 }}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text style={headerTextStyle}>All Chats</Text>
-          <TouchableOpacity
-            onPress={() => this.setState({ isAddUserModalVisible: true })}
-          >
-            <Icon
-              name="plus"
-              size={24}
-              color="white"
-              style={{ marginRight: 10 }}
-            />
-          </TouchableOpacity>
-        </View>
-
         <Modal
           visible={this.state.updateName !== ""}
           transparent={true}
@@ -220,6 +200,13 @@ class ChatListScreen extends Component {
           renderItem={({ item }) => this.renderChatItem(item)}
           keyExtractor={(item) => item.chat_id}
         />
+
+        <TouchableOpacity
+          onPress={() => this.setState({ isAddUserModalVisible: true })}
+          style={[styles.addButtonContainer]}
+        >
+          <Icon name="plus" size={24} color="white" />
+        </TouchableOpacity>
       </View>
     );
   }
@@ -281,6 +268,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     width: "100%",
   },
+  addButtonContainer: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#1ACB97",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   button: {
     backgroundColor: "#075e54",
     padding: 10,
@@ -300,18 +298,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-const headerStyle = {
-  height: 50,
-  backgroundColor: "#075e54",
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  paddingHorizontal: 10,
-};
-const headerTextStyle = {
-  color: "white",
-  fontSize: 18,
-  fontWeight: "bold",
-};
 
 export default ChatListScreen;
