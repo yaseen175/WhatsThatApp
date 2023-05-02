@@ -1,10 +1,5 @@
-import GlobalStyling from "./src/views/globalStyling";
-import LocationExample from "./src/views/location";
-import CameraBasic from "./src/views/camera";
-import CameraTakePicture from "./src/views/camera-takephoto";
 import CameraSendToServer from "./src/views/camera-sendtoserver";
-import DisplayImage from "./src/views/display.js";
-
+import ChatScreenAdd from "./Components/chatScreenAdd";
 import React, { Component } from "react";
 import LoginScreen from "./Components/login";
 import SignUpScreen from "./Components/signup";
@@ -49,6 +44,7 @@ export default class App extends Component {
             component={ChatScreen}
             options={{ headerShown: false }}
           />
+          <Stack.Screen name="AddUserToChat" component={ChatScreenAdd} />
         </Stack.Navigator>
       </NavigationContainer>
     );
