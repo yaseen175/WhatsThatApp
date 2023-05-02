@@ -33,7 +33,6 @@ class ContactsView extends Component {
       blockedContacts: [],
       results: [],
       query: "",
-      isAddUserModalVisible: false,
       newContactId: "",
       showModal: false,
       selectedC: "",
@@ -41,6 +40,7 @@ class ContactsView extends Component {
       submitted: false,
       photos: {},
       allUsers: [],
+      isAddUserModalVisible: false,
     };
   }
 
@@ -48,7 +48,6 @@ class ContactsView extends Component {
     this.getData();
     this.allBlockedContacts();
   }
-
   async getData() {
     const token = await AsyncStorage.getItem("whatsthat_session_token");
 
@@ -100,7 +99,6 @@ class ContactsView extends Component {
         console.log(error);
       });
   }
-
   async deleteContact(contactId) {
     console.log(contactId);
     return fetch(
@@ -183,36 +181,36 @@ class ContactsView extends Component {
         console.log(error);
       });
   }
-  // async get_profile_image(imageId) {
-  //   console.log(imageId);
-  //   const sessionToken = await AsyncStorage.getItem("whatsthat_session_token");
+  async get_profile_image(imageId) {
+    console.log(imageId);
+    const sessionToken = await AsyncStorage.getItem("whatsthat_session_token");
 
-  //   try {
-  //     const response = await fetch(
-  //       "http://localhost:3333/api/1.0.0/user/" + imageId + "/photo",
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "X-Authorization": sessionToken,
-  //         },
-  //       }
-  //     );
+    try {
+      const response = await fetch(
+        "http://localhost:3333/api/1.0.0/user/" + imageId + "/photo",
+        {
+          method: "GET",
+          headers: {
+            "X-Authorization": sessionToken,
+          },
+        }
+      );
 
-  //     if (!response.ok) {
-  //       throw new Error("Network response was not ok");
-  //     }
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
 
-  //     const blob = await response.blob();
-  //     const data = URL.createObjectURL(blob);
+      const blob = await response.blob();
+      const data = URL.createObjectURL(blob);
 
-  //     this.setState({
-  //       photo: data,
-  //       isLoading: false,
-  //     });
-  //   } catch (error) {
-  //     console.error("Error fetching profile image:", error);
-  //   }
-  // }
+      this.setState({
+        photo: data,
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error("Error fetching profile image:", error);
+    }
+  }
 
   renderContact = (item) => {
     const userId = item.user_id;
@@ -261,30 +259,42 @@ class ContactsView extends Component {
 
   // Renders a blocked contact item
   renderBlockContact = (item) => {
-    const { selectedC } = this.state;
     const userId = item.user_id;
 
     return (
-      <TouchableOpacity
-        onPress={() => this.setState({ showModal: true, selectedC: item })}
-        style={styles.notificationBox}
-      >
-        <View style={styles.itemContainer}>
-          <Image
-            style={styles.image}
-            source={{ uri: this.state.photos[userId] }}
-          />
-          <View style={styles.textContainer}>
+      <View style={styles.notificationBox}>
+        <TouchableOpacity
+          onPress={() => {
+            this.get_profile_image(item.user_id);
+            this.setState({ showModal: true, selectedC: item });
+          }}
+          style={styles.itemContainer}
+        >
+          <View style={styles.chatInfo}>
             <Text style={styles.nameText}>
               {item.first_name}
               {"  "}
               {item.last_name}
             </Text>
-            <Text style={styles.phoneText}>{item.email}</Text>
+            <Text style={styles.emailText}>{item.email}</Text>
           </View>
+        </TouchableOpacity>
+        <View style={styles.menuContainer}>
+          <TouchableOpacity
+            onPress={() => this.deleteContact(item.user_id)}
+            style={styles.menuButton}
+          >
+            <Text style={styles.menuText}>Delete</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => this.unblockContact(item.user_id)}
+            style={styles.menuButton}
+          >
+            <Text style={styles.menuText}>Unblock</Text>
+          </TouchableOpacity>
         </View>
-        {this.renderModal(selectedC)}
-      </TouchableOpacity>
+        {this.renderModal(item)}
+      </View>
     );
   };
 
@@ -362,64 +372,6 @@ class ContactsView extends Component {
       return (
         <MenuProvider>
           <View style={styles.container}>
-            <View style={headerStyle}>
-              <TouchableOpacity
-                onPress={() => this.props.navigation.goBack()}
-                style={{ padding: 10 }}
-              >
-                <MaterialIcons name="arrow-back" size={24} color="white" />
-              </TouchableOpacity>
-              <Text style={headerTextStyle}>All Contacts</Text>
-              <TouchableOpacity
-                onPress={() => this.setState({ isAddUserModalVisible: true })}
-              >
-                <Icon
-                  name="plus"
-                  size={24}
-                  color="white"
-                  style={{ marginRight: 10 }}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <Modal
-              visible={isAddUserModalVisible}
-              animationType="slide"
-              transparent={true}
-            >
-              <View style={styles.addModalContainer}>
-                <View style={styles.addModalContent}>
-                  <Text style={styles.addModalTitle}>Add Contact</Text>
-                  <TextInput
-                    style={styles.addModalInput}
-                    placeholder="Enter Contact Id To Add"
-                    onChangeText={(newContactId) =>
-                      this.setState({ newContactId })
-                    }
-                  />
-                  <TouchableOpacity
-                    style={styles.addModalbutton}
-                    onPress={() => this.createNewContact()}
-                  >
-                    <Text style={styles.buttonText}>Add</Text>
-                  </TouchableOpacity>
-                  <>
-                    {this.state.error && (
-                      <Text style={styles.error}>{this.state.error}</Text>
-                    )}
-                  </>
-                  <TouchableOpacity
-                    style={styles.button}
-                    onPress={() =>
-                      this.setState({ isAddUserModalVisible: false })
-                    }
-                  >
-                    <Text style={styles.buttonText}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
-
             <View style={styles.formContent}>
               <View style={styles.inputContainer}>
                 <Image
@@ -442,14 +394,37 @@ class ContactsView extends Component {
               renderItem={({ item }) => this.renderContact(item)}
               keyExtractor={(item) => item.user_id}
             />
-            <Text style={bHeaderTextStyle}>Blocked Contacts</Text>
-
-            <FlatList
-              data={this.state.blockedContacts}
-              renderItem={({ item }) => this.renderBlockContact(item)}
-              keyExtractor={(item) => item.user_id}
-            />
           </View>
+          <Modal
+            visible={isAddUserModalVisible}
+            animationType="slide"
+            transparent={true}
+          >
+            <View style={styles.amodalContainer}>
+              <View style={styles.amodalContent}>
+                <Text style={styles.amodalTitle}>Blocked Contacts</Text>
+                <FlatList
+                  data={this.state.blockedContacts}
+                  renderItem={({ item }) => this.renderBlockContact(item)}
+                  keyExtractor={(item) => item.user_id}
+                />
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() =>
+                    this.setState({ isAddUserModalVisible: false })
+                  }
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+          <TouchableOpacity
+            onPress={() => this.setState({ isAddUserModalVisible: true })}
+            style={[styles.addButtonContainer]}
+          >
+            <MaterialIcons name="block" size={24} color="black" />
+          </TouchableOpacity>
         </MenuProvider>
       );
     }
@@ -458,14 +433,6 @@ class ContactsView extends Component {
 
 export default ContactsView;
 
-const headerStyle = {
-  height: 50,
-  backgroundColor: "#075e54",
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  paddingHorizontal: 10,
-};
 const bHeaderTextStyle = {
   color: "red",
   fontSize: 18,
@@ -515,6 +482,9 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     borderBottomColor: "#FFFFFF",
     flex: 1,
+    color: "#20B2AA",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   inputIcon: {
     marginLeft: 15,
@@ -718,5 +688,34 @@ const styles = StyleSheet.create({
   phoneText: {
     fontSize: 16,
     color: "#999",
+  },
+  addButtonContainer: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#1ACB97",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  amodalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  amodalContent: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 5,
+    width: "80%",
+    alignItems: "center",
+  },
+  amodalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 20,
   },
 });
