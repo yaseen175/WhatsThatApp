@@ -20,15 +20,11 @@ class ChatScreenAdd extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      messages: [],
       search: "",
-      newMessage: "",
       allUsers: [],
       userID: null,
-      ModalVisible: false,
       userToAdd: "",
       userInChatData: [],
-      selectedMessage: null,
       photos: {},
     };
     this.handleSearch = this.handleSearch.bind(this);
@@ -67,11 +63,18 @@ class ChatScreenAdd extends Component {
     if (text.length >= 3) {
       this.setState({ isLoading: true });
       const token = await AsyncStorage.getItem("whatsthat_session_token");
-      fetch(`http://localhost:3333/api/1.0.0/search?q=${text}`, {
-        headers: {
-          "X-Authorization": token,
-        },
-      })
+      fetch(
+        "http://localhost:3333/api/1.0.0/search?q=" +
+          text +
+          "&search_in=contacts",
+        {
+          //   return fetch("http://localhost:3333/api/1.0.0/search?q="+allusers+ "&search_in="++"&limit="++"&offset="+, {
+
+          headers: {
+            "X-Authorization": token,
+          },
+        }
+      )
         .then((response) => response.json())
         .then(async (responseJson) => {
           // Fetch profile images for all users
@@ -170,13 +173,17 @@ class ChatScreenAdd extends Component {
       });
   }
 
-  renderChatItem(chat) {
+  renderChatItem(item) {
     console.log("Im here");
-    console.log(chat);
     return (
       <View style={styles.chatItem}>
         <View style={styles.chatInfo}>
-          <Text style={styles.chatName}>{chat.first_name}</Text>
+          <Text style={styles.nameText}>
+            {item.first_name}
+            {"  "}
+            {item.last_name}
+          </Text>
+          <Text style={styles.emailText}>{item.email}</Text>
         </View>
         <TouchableOpacity
           onPress={() => this.DeleteUserFromGroup(chat.user_id)}
@@ -202,7 +209,7 @@ class ChatScreenAdd extends Component {
             {"  "}
             {item.family_name}
           </Text>
-          <Text style={styles.phoneText}>{item.email}</Text>
+          <Text style={styles.emailText}>{item.email}</Text>
         </View>
         <View style={{ flex: 1 }} />
         <TouchableOpacity onPress={() => this.AddUserToGroup(userId)}>
@@ -217,9 +224,12 @@ class ChatScreenAdd extends Component {
   };
 
   render() {
-    const { chat } = this.props.route.params;
+    const { allUsers, search } = this.state;
 
-    const { messages, newMessage } = this.state;
+    const filteredUsers = allUsers.filter((user) =>
+      user.given_name.toLowerCase().includes(search.toLowerCase())
+    );
+
     return (
       <View style={styles.container}>
         <View style={headerStyle}>
@@ -229,87 +239,56 @@ class ChatScreenAdd extends Component {
           >
             <MaterialIcons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
-          <Text style={headerTextStyle}>{chat.name}</Text>
+          <Text style={headerTextStyle}>ADD USER</Text>
         </View>
-        <SafeAreaView style={styles.container}>
-          <View style={styles.formContent}>
-            <View style={styles.inputContainer}>
-              <Image
-                style={[styles.icon, styles.inputIcon]}
-                source={{
-                  uri: "https://img.icons8.com/color/70/000000/search.png",
-                }}
-              />
-              <TextInput
-                style={styles.inputs}
-                placeholder="Search..."
-                underlineColorAndroid="transparent"
-                value={this.state.query}
-                onChangeText={this.handleSearch}
-              />
-            </View>
+        <View style={styles.formContent}>
+          <View style={styles.inputContainer}>
+            <Image
+              style={[styles.icon, styles.inputIcon]}
+              source={{
+                uri: "https://img.icons8.com/color/70/000000/search.png",
+              }}
+            />
+            <TextInput
+              style={styles.inputs}
+              placeholder="Search user to add..."
+              underlineColorAndroid="transparent"
+              value={this.state.query}
+              onChangeText={this.handleSearch}
+            />
           </View>
-          <View style={styles.errorContainer}>
-            <>
-              {this.state.error && (
-                <Text style={styles.error}>{this.state.error}</Text>
-              )}
-            </>
-          </View>
-
-          {this.state.isLoading ? (
-            <ActivityIndicator />
-          ) : (
+        </View>
+        {search ? (
+          <FlatList
+            data={filteredUsers}
+            renderItem={this.renderItem}
+            keyExtractor={(item) => item.user_id.toString()}
+          />
+        ) : (
+          <View style={styles.existingContainer}>
+            <Text style={styles.existingHeader}>Existing Users</Text>
             <FlatList
-              data={this.state.allUsers}
-              renderItem={this.renderItem}
+              data={this.state.userInChatData}
+              renderItem={({ item }) => this.renderChatItem(item)}
               keyExtractor={(item) => item.user_id.toString()}
             />
-          )}
-          <Text style={styles.modalTitle}>Existing User</Text>
-          <FlatList
-            data={this.state.userInChatData}
-            renderItem={({ item }) => this.renderChatItem(item)}
-            keyExtractor={(item) => item.user_id}
-          />
-        </SafeAreaView>
+          </View>
+        )}
       </View>
     );
   }
+
+  //   <View style={styles.errorContainer}>
+  //   <>
+  //     {this.state.error && (
+  //       <Text style={styles.error}>{this.state.error}</Text>
+  //     )}
+  //   </>
 }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8F8F8",
-  },
-  messageContainer: {
-    alignSelf: "flex-start",
-    maxWidth: "80%",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginVertical: 5,
-  },
-  sendMessage: {
-    alignSelf: "flex-end",
-    backgroundColor: "#DCF8C5",
-  },
-  receivedMessage: {
-    backgroundColor: "#FFF",
-  },
-  author: {
-    fontSize: 12,
-    marginBottom: 2,
-    color: "#666",
-  },
-  message: {
-    fontSize: 16,
-    color: "#000",
-  },
-  time: {
-    fontSize: 10,
-    color: "#999",
-    alignSelf: "flex-end",
   },
   inputContainer: {
     flexDirection: "row",
@@ -319,32 +298,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#DDD",
   },
-  input: {
-    flex: 1,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginRight: 10,
-  },
-  sendButton: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#0084FF",
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 5,
-  },
-  sendButtonText: {
-    fontSize: 16,
-    color: "#FFF",
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
   chatItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -353,12 +306,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
   },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 15,
-  },
   chatInfo: {
     flex: 1,
   },
@@ -366,39 +313,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 5,
-  },
-  modalContent: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 5,
-    width: "80%",
-    alignItems: "center",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
-    alignItems: "center",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 20,
-    width: "100%",
-  },
-  button: {
-    backgroundColor: "#075e54",
-    padding: 10,
-    borderRadius: 5,
-    width: "100%",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "bold",
   },
   itemContainer: {
     flex: 1,
@@ -420,7 +334,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  phoneText: {
+  emailText: {
     fontSize: 16,
     color: "#999",
   },
@@ -448,7 +362,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  phoneText: {
+  emailText: {
     fontSize: 16,
     color: "#999",
   },
@@ -470,9 +384,6 @@ const styles = StyleSheet.create({
   icon: {
     width: 30,
     height: 30,
-  },
-  iconBtnSearch: {
-    alignSelf: "center",
   },
   inputs: {
     height: 45,
@@ -498,6 +409,15 @@ const styles = StyleSheet.create({
     color: "red",
     fontWeight: "900",
     alignItems: "center",
+  },
+  existingHeader: {
+    color: "#1ACB97",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  existingContainer: {
+    justifyContent: "center",
   },
 });
 const headerStyle = {

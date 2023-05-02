@@ -179,7 +179,7 @@ export default class HomeScreen extends Component {
             />
             <TextInput
               style={styles.inputs}
-              placeholder="Search..."
+              placeholder="Search for any contact to add..."
               underlineColorAndroid="transparent"
               value={this.state.query}
               onChangeText={this.handleSearch}
