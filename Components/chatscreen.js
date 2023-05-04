@@ -7,24 +7,75 @@ import {
   TouchableOpacity,
   Text,
   FlatList,
-  Modal,
 } from "react-native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import Icon from "react-native-vector-icons/FontAwesome";
 import moment from "moment";
+import Modal from "react-native-modal";
 
 class ChatScreen extends Component {
   constructor(props) {
     super(props);
     this.state = {
       messages: [],
-      newMessage: "",
+      search: "",
+      newMessage: props.route.params.message || "",
+      allUsers: [],
       userID: null,
-      isAddUserModalVisible: false,
+      ModalVisible: false,
       userToAdd: "",
       userInChatData: [],
       selectedMessage: null,
+      photos: {},
+      showDraftsModal: false,
+      drafts: [],
+      editMode: false,
+      draftToEdit: null,
     };
+  }
+
+  componentDidMount() {
+    this.getData();
+  }
+
+  async componentDidUpdate(prevProps, prevState) {
+    if (this.state.showDraftsModal !== prevState.showDraftsModal) {
+      const drafts = await this.getDrafts();
+      this.setState({ drafts });
+    }
+  }
+
+  async saveDraft() {
+    console.log("asdasd");
+    const { userID, newMessage } = this.state;
+    const draft = { id: Date.now(), content: newMessage };
+    console.log(userID);
+    console.log(draft);
+    let userDrafts = await AsyncStorage.getItem(`drafts_${userID}`);
+    userDrafts = userDrafts ? JSON.parse(userDrafts) : [];
+
+    userDrafts.push(draft);
+    await AsyncStorage.setItem(`drafts_${userID}`, JSON.stringify(userDrafts));
+  }
+
+  async getDrafts() {
+    const { userID } = this.state;
+    let userDrafts = await AsyncStorage.getItem(`drafts_${userID}`);
+    userDrafts = userDrafts ? JSON.parse(userDrafts) : [];
+    console.log(userDrafts);
+    return userDrafts;
+  }
+
+  async deleteDraft(draftId) {
+    const { userID } = this.state;
+    const { drafts } = this.state;
+
+    let userDrafts = await AsyncStorage.getItem(`drafts_${userID}`);
+    userDrafts = drafts ? JSON.parse(userDrafts) : [];
+
+    userDrafts = userDrafts.filter((draft) => draft.id !== draftId);
+    await AsyncStorage.setItem(`drafts_${userID}`, JSON.stringify(userDrafts));
+    this.setState({ drafts: userDrafts });
   }
 
   async getData() {
@@ -43,8 +94,6 @@ class ChatScreen extends Component {
       .then((response) => response.json())
       .then((responseJson) => {
         console.log(responseJson);
-        console.log(responseJson.creator.email);
-        console.log(responseJson.messages);
 
         this.setState({
           messages: responseJson.messages,
@@ -52,10 +101,6 @@ class ChatScreen extends Component {
         });
       })
       .catch((error) => console.error(error));
-  }
-
-  componentDidMount() {
-    this.getData();
   }
 
   async sendMessage() {
@@ -93,9 +138,7 @@ class ChatScreen extends Component {
     const { chat } = this.props.route.params;
     const sessionToken = await AsyncStorage.getItem("whatsthat_session_token");
 
-    const message = {
-      message: newMessage,
-    };
+    const { messages, newMessage } = this.state;
 
     return fetch(
       "http://localhost:3333/api/1.0.0/chat/" +
@@ -147,72 +190,56 @@ class ChatScreen extends Component {
       });
   }
 
-  async AddUserToGroup() {
-    const { chat } = this.props.route.params;
-    return fetch(
-      "http://localhost:3333/api/1.0.0/chat/" +
-        chat.chat_id +
-        "/user/" +
-        this.state.userId,
-      {
-        method: "POST",
-        headers: {
-          "X-Authorization": await AsyncStorage.getItem(
-            "whatsthat_session_token"
-          ),
-        },
-      }
-    )
-      .then((responseJson) => {
-        this.getData();
-        console.log("User Added");
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  }
+  renderDraft = ({ item }) => {
+    const { editMode, draftToEdit } = this.state;
 
-  async DeleteUserFromGroup(chatid) {
-    const { chat } = this.props.route.params;
-    return fetch(
-      "http://localhost:3333/api/1.0.0/chat/" +
-        chat.chat_id +
-        "/user/" +
-        chatid,
-      {
-        method: "DELETE",
-        headers: {
-          "X-Authorization": await AsyncStorage.getItem(
-            "whatsthat_session_token"
-          ),
-        },
-      }
-    )
-      .then((responseJson) => {
-        this.getData();
-        console.log("User Deleted");
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  }
-
-  renderChatItem(chat) {
-    console.log("Im here");
-    console.log(chat);
-    return (
-      <View style={styles.chatItem}>
-        <View style={styles.chatInfo}>
-          <Text style={styles.chatName}>{chat.first_name}</Text>
+    if (editMode && item.id === draftToEdit.id) {
+      return (
+        <View style={styles.draftContainer}>
+          <TextInput
+            style={styles.editDraftInput}
+            value={draftToEdit.content}
+            onChangeText={(text) => {
+              draftToEdit.content = text;
+              this.forceUpdate();
+            }}
+          />
+          <TouchableOpacity
+            style={styles.sendDraftButton}
+            onPress={async () => {
+              this.setState({ newMessage: item.content });
+              await this.deleteDraft(item.id);
+              this.sendMessage();
+              this.setState({ showDraftsModal: false });
+            }}
+          >
+            <Text style={styles.sendDraftButtonText}>Send</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => {
+              this.deleteDraft(item.id);
+              this.setState({ editMode: false, draftToEdit: null });
+            }}
+          >
+            <Text>Delete</Text>
+          </TouchableOpacity>
         </View>
+      );
+    }
+    return (
+      <View style={styles.draftContainer}>
+        <Text style={styles.draftText}>{item.content}</Text>
+
         <TouchableOpacity
-          onPress={() => this.DeleteUserFromGroup(chat.user_id)}
+          style={styles.sendDraftButton}
+          onPress={() => this.setState({ editMode: true, draftToEdit: item })}
         >
-          <MaterialIcons name="delete" size={24} color="red" />
+          <Text style={styles.sendDraftButtonText}>Edit</Text>
         </TouchableOpacity>
       </View>
     );
-  }
+  };
 
   renderMessage = ({ item }) => {
     const { userID } = this.state;
@@ -288,9 +315,8 @@ class ChatScreen extends Component {
 
   render() {
     const { chat } = this.props.route.params;
-    const { isAddUserModalVisible, userToAdd } = this.state;
 
-    const { messages, newMessage } = this.state;
+    const { messages, newMessage, showDraftsModal } = this.state;
     return (
       <View style={styles.container}>
         <View style={headerStyle}>
@@ -302,7 +328,9 @@ class ChatScreen extends Component {
           </TouchableOpacity>
           <Text style={headerTextStyle}>{chat.name}</Text>
           <TouchableOpacity
-            onPress={() => this.setState({ isAddUserModalVisible: true })}
+            onPress={() =>
+              this.props.navigation.navigate("AddUserToChat", { chat })
+            }
           >
             <Icon
               name="plus"
@@ -312,45 +340,29 @@ class ChatScreen extends Component {
             />
           </TouchableOpacity>
         </View>
-        <Modal
-          visible={isAddUserModalVisible}
-          animationType="slide"
-          transparent={true}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Existing User</Text>
-              <FlatList
-                data={this.state.userInChatData}
-                renderItem={({ item }) => this.renderChatItem(item)}
-                keyExtractor={(item) => item.user_id}
-              />
 
-              <View style={{ marginTop: 50 }}>
-                <Text style={styles.modalTitle}>Add User</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter user ID"
-                  onChangeText={(userId) => this.setState({ userId })}
-                />
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() => this.AddUserToGroup()}
-                >
-                  <Text style={styles.buttonText}>Add</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() =>
-                    this.setState({ isAddUserModalVisible: false })
-                  }
-                >
-                  <Text style={styles.buttonText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+        <Modal
+          isVisible={showDraftsModal}
+          onBackdropPress={() =>
+            this.setState({
+              showDraftsModal: false,
+              editMode: false,
+              draftToEdit: null,
+            })
+          }
+          animationIn="slideInRight"
+          animationOut="slideOutRight"
+        >
+          <View style={styles.draftsModal}>
+            <FlatList
+              data={this.state.drafts}
+              renderItem={this.renderDraft}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.draftsList}
+            />
           </View>
         </Modal>
+
         <FlatList
           data={messages}
           renderItem={this.renderMessage}
@@ -369,6 +381,19 @@ class ChatScreen extends Component {
             onPress={this.sendMessage.bind(this)}
           >
             <Text style={styles.sendButtonText}>Send</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={this.saveDraft.bind(this)}>
+            <Text>Save Draft</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => this.setState({ showDraftsModal: true })}
+          >
+            <Icon
+              name="folder"
+              size={24}
+              color="black"
+              style={{ marginRight: 10 }}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -465,13 +490,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 5,
   },
-  modalContent: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 5,
-    width: "80%",
-    alignItems: "center",
-  },
+
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
@@ -498,10 +517,71 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
+  itemContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    // padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  image: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  textContainer: {
+    marginLeft: 16,
+  },
+  nameText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  phoneText: {
+    fontSize: 16,
+    color: "#999",
+  },
+  formContent: {
+    flexDirection: "row",
+    marginTop: 30,
+  },
+  draftsModal: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 10,
+  },
+  draftContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    paddingVertical: 10,
+  },
+  draftText: {
+    fontSize: 16,
+  },
+  sendDraftButton: {
+    backgroundColor: "#4db6ac",
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 5,
+  },
+  sendDraftButtonText: {
+    color: "#fff",
+    fontSize: 14,
+  },
+  deleteButton: {
+    marginLeft: 10,
+    backgroundColor: "#f44336",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+  },
 });
 const headerStyle = {
   height: 50,
-  backgroundColor: "#075e54",
+  backgroundColor: "#20B2AA",
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "space-between",
