@@ -8,7 +8,6 @@ import {
   ImageBackground,
 } from "react-native";
 
-import * as EmailValidator from "email-validator";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default class LoginScreen extends Component {
@@ -25,6 +24,22 @@ export default class LoginScreen extends Component {
     this._onPressButton = this._onPressButton.bind(this);
   }
 
+  async componentDidMount() {
+    try {
+      const userId = await AsyncStorage.getItem("whatsthat_user_id");
+      const sessionToken = await AsyncStorage.getItem(
+        "whatsthat_session_token"
+      );
+
+      if (userId && sessionToken) {
+        // The user is already logged in, so navigate to the Home screen
+        this.props.navigation.navigate("HomeNav");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   _onPressButton = async () => {
     this.setState({ submitted: true });
     this.setState({ error: "" });
@@ -34,25 +49,7 @@ export default class LoginScreen extends Component {
       return;
     }
 
-    if (!EmailValidator.validate(this.state.email)) {
-      this.setState({ error: "Must enter valid email" });
-      return;
-    }
-
-    const PASSWORD_REGEX = new RegExp(
-      "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"
-    );
-    if (!PASSWORD_REGEX.test(this.state.password)) {
-      this.setState({
-        error:
-          "Password isn't strong enough (One upper, one lower, one special, one number, at least 8 characters long)",
-      });
-      return;
-    }
-
-    console.log(
-      "Button clicked: " + this.state.email + " " + this.state.password
-    );
+    console.log(`Button clicked: ${this.state.email} ${this.state.password}`);
     console.log("Validated and ready to send to the API");
 
     return fetch("http://localhost:3333/api/1.0.0/login", {
@@ -66,7 +63,8 @@ export default class LoginScreen extends Component {
       .then((response) => {
         if (response.status === 200) {
           return response.json();
-        } else if (response.status === 400) {
+        }
+        if (response.status === 400) {
           this.setState({
             error: "Invalid email / password supplied",
           });
@@ -98,7 +96,7 @@ export default class LoginScreen extends Component {
   };
 
   render() {
-    const navigation = this.props.navigation;
+    const { navigation } = this.props;
 
     return (
       <View style={styles.container}>
@@ -128,7 +126,7 @@ export default class LoginScreen extends Component {
             placeholder="Enter password"
             onChangeText={(password) => this.setState({ password })}
             defaultValue={this.state.password}
-            secureTextEntry={true}
+            secureTextEntry
           />
 
           <>

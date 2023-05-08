@@ -8,6 +8,7 @@ import {
   TextInput,
 } from "react-native";
 import DisplayImage from "../src/views/display";
+import Toast from "react-native-toast-message";
 
 export default class SettingScreen extends Component {
   constructor(props) {
@@ -35,24 +36,33 @@ export default class SettingScreen extends Component {
   componentDidMount() {
     this.userData();
   }
+
   componentDidMount() {
     this.userData();
   }
 
   userData = async () => {
-    const sessionToken = await AsyncStorage.getItem("whatsthat_session_token");
-    const userID = await AsyncStorage.getItem("whatsthat_user_id");
-    console.log(userID);
+    try {
+      const sessionToken = await AsyncStorage.getItem(
+        "whatsthat_session_token"
+      );
+      const userID = await AsyncStorage.getItem("whatsthat_user_id");
+      console.log(userID);
 
-    return fetch("http://localhost:3333/api/1.0.0/user/" + userID, {
-      headers: {
-        "X-Authorization": sessionToken,
-      },
-    })
-      .then((response) => response.json())
-      .then((responseJson) => {
+      const response = await fetch(
+        `http://localhost:3333/api/1.0.0/user/${userID}`,
+        {
+          headers: {
+            "X-Authorization": sessionToken,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        const responseJson = await response.json();
+        console.log("hii");
+        console.log(responseJson);
         this.setState({
-          isLoading: false,
           userData: responseJson,
           origfirstname: responseJson.first_name,
           origlastname: responseJson.last_name,
@@ -63,10 +73,33 @@ export default class SettingScreen extends Component {
           email: responseJson.email,
           password: responseJson.password,
         });
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+      } else if (response.status === 401) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Unauthorized",
+        });
+        throw "Unauthorized";
+      } else if (response.status === 404) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "Sorry User Not Found",
+        });
+        throw "Sorry User Not Found";
+      } else if (response.status === 500) {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: "something went wrong",
+        });
+        throw "something went wrong";
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   updateData = async () => {
@@ -74,23 +107,32 @@ export default class SettingScreen extends Component {
     const userID = await AsyncStorage.getItem("whatsthat_user_id");
     console.log(userID);
 
-    let toSend = {};
+    const toSend = {};
     if (this.state.firstname != this.state.origfirstname) {
-      toSend["first_name"] = this.state.firstname;
+      toSend.first_name = this.state.firstname;
     }
     if (this.state.lastname != this.state.origlastname) {
-      toSend["last_name"] = this.state.lastname;
+      toSend.last_name = this.state.lastname;
     }
     if (this.state.email != this.state.origemail) {
-      toSend["email"] = this.state.email;
+      toSend.email = this.state.email;
     }
     if (this.state.password != this.state.origpassword) {
-      toSend["password"] = this.state.password;
+      toSend.password = this.state.password;
+    }
+
+    if (!(this.state.firstname && this.state.lastname)) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Enter valid firstname and passwrod",
+      });
+      return;
     }
 
     console.log(JSON.stringify(toSend));
 
-    return fetch("http://localhost:3333/api/1.0.0/user/" + userID, {
+    return fetch(`http://localhost:3333/api/1.0.0/user/${userID}`, {
       method: "PATCH",
       headers: {
         "X-Authorization": sessionToken,
@@ -98,10 +140,57 @@ export default class SettingScreen extends Component {
       },
       body: JSON.stringify(toSend),
     })
-      .then((responseJson) => {
-        console.log(responseJson);
-        console.log("Profile Updated");
-        this.userData();
+      .then((response) => {
+        if (response.status === 200) {
+          Toast.show({
+            type: "success",
+            text1: "Success",
+            text2: "Successfully Updated",
+          });
+          this.userData();
+        } else if (response.status === 400) {
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Your password is weak, please try again",
+          });
+          throw "Weak Password";
+        } else if (response.status === 401) {
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Unauthorized",
+          });
+          throw "Unauthorized";
+        } else if (response.status === 403) {
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Forbidden",
+          });
+          throw "Forbidden";
+        } else if (response.status === 404) {
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Sorry Contact Not Found",
+          });
+          throw "Sorry Contact Not Found";
+        } else if (response.status === 500) {
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "Server Error",
+          });
+          throw "Server Error";
+        } else {
+          Toast.show({
+            type: "error",
+            text1: "Error",
+            text2: "something went wrong",
+          });
+          throw "something went wrong";
+        }
       })
       .catch((error) => {
         console.log(error);
@@ -121,8 +210,14 @@ export default class SettingScreen extends Component {
     })
       .then(async (response) => {
         if (response.status === 200) {
+          Toast.show({
+            type: "success",
+            text1: "Success",
+            text2: "Successfully Logged Out",
+          });
           await AsyncStorage.removeItem("whatsthat_session_token");
           await AsyncStorage.removeItem("whatsthat_user_id");
+
           this.props.navigation.navigate("Signin");
         } else if (response.status === 401) {
           console.log("Unauthorized");
@@ -134,7 +229,7 @@ export default class SettingScreen extends Component {
         }
       })
       .catch((error) => {
-        this.setState = { error: error };
+        this.setState = { error };
         this.setState = { submitted: false };
       });
   };
@@ -200,6 +295,7 @@ export default class SettingScreen extends Component {
             <Text style={styles.text}>LOGOUT</Text>
           </View>
         </TouchableOpacity>
+        <Toast />
       </View>
     );
   }

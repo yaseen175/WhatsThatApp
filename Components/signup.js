@@ -1,3 +1,8 @@
+/* eslint-disable react/prop-types */
+/* eslint-disable no-throw-literal */
+/* eslint-disable consistent-return */
+/* eslint-disable react/destructuring-assignment */
+/* eslint-disable quotes */
 import React, { Component } from "react";
 import {
   View,
@@ -23,10 +28,10 @@ export default class SignUpScreen extends Component {
       submitted: false,
     };
 
-    this._onPressButton = this._onPressButton.bind(this);
+    this.onPressButton = this.onPressButton.bind(this);
   }
 
-  _onPressButton() {
+  onPressButton() {
     this.setState({ submitted: true });
     this.setState({ error: "" });
 
@@ -37,6 +42,11 @@ export default class SignUpScreen extends Component {
 
     if (!EmailValidator.validate(this.state.email)) {
       this.setState({ error: "Must enter valid email" });
+      return;
+    }
+
+    if (!(this.state.firstName && this.state.lastName)) {
+      this.setState({ error: "Must enter firstname and lastname" });
       return;
     }
 
@@ -51,9 +61,7 @@ export default class SignUpScreen extends Component {
       return;
     }
 
-    console.log(
-      "Button clicked: " + this.state.email + " " + this.state.password
-    );
+    console.log(`Button clicked: ${this.state.email} ${this.state.password}`);
 
     return fetch("http://localhost:3333/api/1.0.0/user", {
       method: "POST",
@@ -67,24 +75,15 @@ export default class SignUpScreen extends Component {
     })
       .then((response) => {
         if (response.status === 201) {
-          if (this.state.submitted && this.state.firstName === "") {
-            this.setState({ error: "You must enter first name" });
-          } else if (this.state.submitted && !this.state.lastName) {
-            this.setState({ error: "You must enter last name" });
-          } else {
-            return response.json();
-          }
+          console.log("User created with ID: ", response);
+          this.props.navigation.navigate("Signin");
         } else if (response.status === 400) {
-          this.setState({ error: "failed validation please try again" });
+          this.setState({ error: "Email Already Exists" });
           throw "failed validation";
         } else {
           this.setState({ error: "something went wrong" });
           throw "something went wrong";
         }
-      })
-      .then((responseJson) => {
-        console.log("User created with ID: ", responseJson);
-        this.props.navigation.navigate("Signin");
       })
       .catch((error) => {
         console.error(error);
@@ -144,7 +143,7 @@ export default class SignUpScreen extends Component {
             placeholder="Enter password"
             onChangeText={(password) => this.setState({ password })}
             defaultValue={this.state.password}
-            secureTextEntry={true}
+            secureTextEntry
           />
 
           <>
@@ -157,7 +156,7 @@ export default class SignUpScreen extends Component {
             <Text style={styles.forgotPasswordButtonText}>Forgot?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button} onPress={this._onPressButton}>
+          <TouchableOpacity style={styles.button} onPress={this.onPressButton}>
             <Text style={styles.buttonText}>Register</Text>
           </TouchableOpacity>
           <>
