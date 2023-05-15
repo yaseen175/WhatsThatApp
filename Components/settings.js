@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import DisplayImage from "../src/views/display";
 import Toast from "react-native-toast-message";
@@ -235,6 +236,15 @@ export default class SettingScreen extends Component {
   };
 
   render() {
+    if (!this.state.userData) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text>Loading...</Text>
+        </View>
+      );
+    }
+
     return (
       <View style={styles.container}>
         <View style={styles.avatarContainer}>
