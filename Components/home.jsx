@@ -1,4 +1,9 @@
-import React, { Component } from "react";
+/* eslint-disable no-await-in-loop */
+/* eslint-disable react/no-unused-state */
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-use-before-define */
+/* eslint-disable import/no-extraneous-dependencies */
+import React, { Component } from 'react';
 import {
   View,
   Image,
@@ -8,34 +13,34 @@ import {
   Text,
   SafeAreaView,
   TouchableOpacity,
-} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ActivityIndicator } from "react-native";
-import Icon from "react-native-vector-icons/FontAwesome";
+  ActivityIndicator,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import Toast from 'react-native-toast-message';
 
 export default class HomeScreen extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      search: "",
+      // search: '',
       allUsers: [],
       isLoading: false,
       photos: {}, // Store user_id to profile image mapping
-      error: "",
     };
 
     this.handleSearch = this.handleSearch.bind(this);
   }
 
   async handleSearch(text) {
-    this.setState({ search: text });
+    // this.setState({ search: text });
     if (text.length >= 3) {
       this.setState({ isLoading: true });
-      const token = await AsyncStorage.getItem("whatsthat_session_token");
+      const token = await AsyncStorage.getItem('whatsthat_session_token');
       fetch(`http://localhost:3333/api/1.0.0/search?q=${text}`, {
         headers: {
-          "X-Authorization": token,
+          'X-Authorization': token,
         },
       })
         .then((response) => response.json())
@@ -47,27 +52,23 @@ export default class HomeScreen extends Component {
               const response = await fetch(
                 `http://localhost:3333/api/1.0.0/user/${user.user_id}/photo`,
                 {
-                  method: "GET",
+                  method: 'GET',
                   headers: {
-                    "X-Authorization": token,
+                    'X-Authorization': token,
                   },
-                }
+                },
               );
 
               if (!response.ok) {
-                throw new Error("Network response was not ok");
+                throw new Error('Network response was not ok');
               }
 
               const blob = await response.blob();
               const data = URL.createObjectURL(blob);
-              console.log(data);
 
               photos[user.user_id] = data;
             } catch (error) {
-              console.error(
-                `Error fetching profile image for user ${user.user_id}:`,
-                error
-              );
+              throw new Error(error);
             }
           }
 
@@ -78,8 +79,8 @@ export default class HomeScreen extends Component {
           });
         })
         .catch((error) => {
-          console.log(error);
           this.setState({ isLoading: false });
+          throw new Error(error);
         });
     } else {
       this.setState({ allUsers: [], photos: {} });
@@ -87,69 +88,86 @@ export default class HomeScreen extends Component {
   }
 
   addContact = async (contact) => {
-    this.setState({ submitted: true, error: "" });
-    console.log(contact);
+    this.setState({ submitted: true });
 
-    return fetch(
-      "http://localhost:3333/api/1.0.0/user/" + contact + "/contact/",
-      {
-        method: "POST",
-        headers: {
-          "X-Authorization": await AsyncStorage.getItem(
-            "whatsthat_session_token"
-          ),
+    try {
+      const response = await fetch(
+        `http://localhost:3333/api/1.0.0/user/${contact}/contact/`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Authorization': await AsyncStorage.getItem(
+              'whatsthat_session_token',
+            ),
+          },
         },
-      }
-    )
-      .then((response) => {
-        if (response.status === 200) {
-          response.text().then((text) => {
-            if (text === "Already a contact") {
-              this.setState({
-                error: "Already a contact",
-              });
-            } else {
-              console.log("Successfully added");
-            }
+      );
+
+      if (response.status === 200) {
+        const text = await response.text();
+        if (text === 'Already a contact') {
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Already a contact',
           });
-        } else if (response.status === 400) {
-          this.setState({
-            error: "You can't add yourself as a contact",
-          });
-          throw "You can't add yourself as a contact";
-        } else if (response.status === 401) {
-          this.setState({
-            error: "Unauthorized",
-          });
-          throw "Unauthorized";
-        } else if (response.status === 404) {
-          this.setState({
-            error: "Sorry Contact Not Found",
-          });
-          throw "Sorry Contact Not Found";
         } else {
-          this.setState({ error: "something went wrong" });
-          throw "something went wrong";
+          Toast.show({
+            type: 'success',
+            text1: 'Success',
+            text2: 'Successfully added',
+          });
         }
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+      } else if (response.status === 400) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: "You can't add yourself as a contact",
+        });
+        throw new Error("You can't add yourself as a contact");
+      } else if (response.status === 401) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Unauthorized',
+        });
+        throw new Error('Unauthorized');
+      } else if (response.status === 404) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Sorry Contact Not Found',
+        });
+        throw new Error('Sorry Contact Not Found');
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Something went wrong',
+        });
+        throw new Error('Something went wrong');
+      }
+    } catch (error) {
+      throw new Error(error);
+    }
   };
 
   renderItem = ({ item }) => {
     const userId = item.user_id;
+    const {
+      photos,
+    } = this.state;
 
     return (
       <View style={styles.itemContainer}>
         <Image
           style={styles.image}
-          source={{ uri: this.state.photos[userId] }}
+          source={{ uri: photos[userId] }}
         />
         <View style={styles.textContainer}>
           <Text style={styles.nameText}>
             {item.given_name}
-            {"  "}
+            {'  '}
             {item.family_name}
           </Text>
           <Text style={styles.phoneText}>{item.email}</Text>
@@ -159,7 +177,7 @@ export default class HomeScreen extends Component {
           <Icon
             name="plus"
             size={24}
-            style={{ marginRight: 10, color: "#20B2AA", fontWeight: "bold" }}
+            style={{ marginRight: 10, color: '#20B2AA', fontWeight: 'bold' }}
           />
         </TouchableOpacity>
       </View>
@@ -167,6 +185,10 @@ export default class HomeScreen extends Component {
   };
 
   render() {
+    const {
+      query, isLoading, allUsers,
+    } = this.state;
+
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.formContent}>
@@ -174,35 +196,29 @@ export default class HomeScreen extends Component {
             <Image
               style={[styles.icon, styles.inputIcon]}
               source={{
-                uri: "https://img.icons8.com/color/70/000000/search.png",
+                uri: 'https://img.icons8.com/color/70/000000/search.png',
               }}
             />
             <TextInput
               style={styles.inputs}
               placeholder="Search for any contact to add..."
               underlineColorAndroid="transparent"
-              value={this.state.query}
+              value={query}
               onChangeText={this.handleSearch}
             />
           </View>
         </View>
-        <View style={styles.errorContainer}>
-          <>
-            {this.state.error && (
-              <Text style={styles.error}>{this.state.error}</Text>
-            )}
-          </>
-        </View>
 
-        {this.state.isLoading ? (
+        {isLoading ? (
           <ActivityIndicator />
         ) : (
           <FlatList
-            data={this.state.allUsers}
+            data={allUsers}
             renderItem={this.renderItem}
             keyExtractor={(item) => item.user_id.toString()}
           />
         )}
+        <Toast />
       </SafeAreaView>
     );
   }
@@ -211,11 +227,11 @@ export default class HomeScreen extends Component {
 const styles = StyleSheet.create({
   itemContainer: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: '#eee',
   },
   image: {
     width: 48,
@@ -227,24 +243,24 @@ const styles = StyleSheet.create({
   },
   nameText: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   phoneText: {
     fontSize: 16,
-    color: "#999",
+    color: '#999',
   },
   formContent: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginTop: 30,
   },
   inputContainer: {
-    borderBottomColor: "#F5FCFF",
-    backgroundColor: "#FFFFFF",
+    borderBottomColor: '#F5FCFF',
+    backgroundColor: '#FFFFFF',
     borderRadius: 30,
     borderBottomWidth: 1,
     height: 45,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
     margin: 10,
   },
@@ -253,32 +269,27 @@ const styles = StyleSheet.create({
     height: 30,
   },
   iconBtnSearch: {
-    alignSelf: "center",
+    alignSelf: 'center',
   },
   inputs: {
     height: 45,
     marginLeft: 16,
-    borderBottomColor: "#FFFFFF",
+    borderBottomColor: '#FFFFFF',
     flex: 1,
-    color: "#20B2AA",
+    color: '#20B2AA',
     fontSize: 12,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   inputIcon: {
     marginLeft: 15,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   errorContainer: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  error: {
-    color: "red",
-    fontWeight: "900",
-    alignItems: "center",
+    borderBottomColor: '#eee',
   },
 });
 
