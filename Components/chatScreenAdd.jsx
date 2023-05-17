@@ -4,7 +4,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
-/* eslint-disable import/no-extraneous-dependencies */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { Component } from 'react';
 import {
@@ -36,6 +35,7 @@ class ChatScreenAdd extends Component {
     this.getData();
   }
 
+  // Handles the search functioanlity for just the contacts
   async handleSearch(text) {
     this.setState({ search: text });
     if (text.length >= 3) {
@@ -149,6 +149,7 @@ class ChatScreenAdd extends Component {
     }
   }
 
+  // Adds user to the group whom id is passed to the parameter.
   async AddUserToGroup(userid) {
     const { chat } = this.props.route.params;
     return fetch(
@@ -219,6 +220,7 @@ class ChatScreenAdd extends Component {
       });
   }
 
+  // Deletes user from the group whom id is passed to the parameter.
   async DeleteUserFromGroup(chatid) {
     const userID = await AsyncStorage.getItem('whatsthat_user_id');
 
@@ -292,6 +294,7 @@ class ChatScreenAdd extends Component {
       });
   }
 
+  // Renders the exisitng users in group.
   renderChatItem(item) {
     return (
       <View style={styles.chatItem}>
@@ -348,6 +351,7 @@ class ChatScreenAdd extends Component {
     } = this.state;
     const { navigation } = this.props;
 
+    // checks if the lowercase given_name values include the lowercase search (What the user searched for)
     const filteredUsers = allUsers.filter((user) => user.given_name.toLowerCase().includes(search.toLowerCase()));
 
     return (
@@ -378,6 +382,10 @@ class ChatScreenAdd extends Component {
             />
           </View>
         </View>
+
+        {/* If search is true, render a FlatList with filteredUsers data,
+         if not, render a View with an 'Existing Users' header and a FlatList
+         with exisitng users. */}
         {search ? (
           <FlatList
             data={filteredUsers}

@@ -26,6 +26,7 @@ export default class LoginScreen extends Component {
     this.onPressButton = this.onPressButton.bind(this);
   }
 
+  // navigate user to home screen if logged in
   async componentDidMount() {
     try {
       const { navigation } = this.props;
@@ -36,7 +37,7 @@ export default class LoginScreen extends Component {
       );
 
       if (userId && sessionToken) {
-        // The user is already logged in, so navigate to the Home screen
+        // After refreshing, if user logged in, navigate them to home screen.
         navigation.navigate('HomeNav');
       }
     } catch (error) {
@@ -44,6 +45,7 @@ export default class LoginScreen extends Component {
     }
   }
 
+  // Handles the login functionality.
   onPressButton = async () => {
     const { email, password } = this.state;
     const { navigation } = this.props;
@@ -132,6 +134,7 @@ export default class LoginScreen extends Component {
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
 
+          {/* outputs the error, whatever is in the errors state. */}
           {error && (
           <Text style={styles.error}>{error}</Text>
           )}

@@ -2,7 +2,6 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-use-before-define */
 /* eslint-disable react/prop-types */
-/* eslint-disable import/no-extraneous-dependencies */
 import React, { Component } from 'react';
 import {
   StyleSheet,
@@ -46,10 +45,10 @@ class ContactsView extends Component {
   }
 
   componentDidMount() {
-    this.checkAndFetchChats(); // Fetch chats and check login status when component mounts
+    this.checkAndFetchChats(); // Fetches chats and check login status when component mounts
     const { navigation } = this.props;
     this.unsubscribe = navigation.addListener('focus', () => {
-      this.checkAndFetchChats(); // Fetch chats and check login status when screen receives focus
+      this.checkAndFetchChats(); // Fetches chats and check login status when screen receives focus
     });
   }
 
@@ -59,6 +58,7 @@ class ContactsView extends Component {
     }
   }
 
+  // Search function, that only searches for the users in contacts, it also gets their pictures.
   async handleSearch(text) {
     this.setState({ search: text });
     if (text.length >= 0) {
@@ -67,8 +67,6 @@ class ContactsView extends Component {
       fetch(
         `http://localhost:3333/api/1.0.0/search?q=${text}&search_in=contacts`,
         {
-          //   return fetch("http://localhost:3333/api/1.0.0/search?q="+allusers+ "&search_in="++"&limit="++"&offset="+, {
-
           headers: {
             'X-Authorization': token,
           },
@@ -166,6 +164,7 @@ class ContactsView extends Component {
       });
   }
 
+  // Gets user images, based on whatever imageId is passed to it.
   async get_profile_image(imageId) {
     const sessionToken = await AsyncStorage.getItem('whatsthat_session_token');
 
@@ -200,6 +199,7 @@ class ContactsView extends Component {
     this.setState({ showModal: false });
   };
 
+  // Blocks a contact, using the contactId parameter.
   async blockContact(contactId) {
     return fetch(`http://localhost:3333/api/1.0.0/user/${contactId}/block/`, {
       method: 'POST',
@@ -259,6 +259,7 @@ class ContactsView extends Component {
       });
   }
 
+  // Unblocks a contact, using the contactId parameter.
   async unblockContact(contactId) {
     return fetch(`http://localhost:3333/api/1.0.0/user/${contactId}/block/`, {
       method: 'DELETE',
@@ -339,6 +340,7 @@ class ContactsView extends Component {
       });
   }
 
+  // Deletes a contact, using the contactId parameter.
   async deleteContact(contactId) {
     return fetch(`http://localhost:3333/api/1.0.0/user/${contactId}/contact/`, {
       method: 'DELETE',
@@ -398,6 +400,7 @@ class ContactsView extends Component {
       });
   }
 
+  // Checks if user is logged in, if not, takes them to the login screen.
   async checkLoggedIn() {
     try {
       const { navigation } = this.props;
@@ -507,6 +510,7 @@ class ContactsView extends Component {
     </View>
   );
 
+  // renders the modal that shows a zoomed in version of users profile picture.
   renderModal = () => {
     const { showModal, photo } = this.state;
 
@@ -590,6 +594,8 @@ class ContactsView extends Component {
             />
           </View>
         </View>
+
+        {/* Outputs all contacts, but when searching only outputs the desired contacts */}
         {search ? (
           <FlatList
             data={searchedUsers}
@@ -608,6 +614,7 @@ class ContactsView extends Component {
           </MenuProvider>
         )}
 
+        {/* Modal that shows all the blocked contacts. */}
         <Modal
           visible={isAddUserModalVisible}
           animationType="slide"

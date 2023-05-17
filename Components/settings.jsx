@@ -12,7 +12,6 @@ import {
   Image,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-// import DisplayImage from './display';
 
 export default class SettingScreen extends Component {
   constructor(props) {
@@ -34,6 +33,7 @@ export default class SettingScreen extends Component {
     this.Logout = this.Logout.bind(this);
   }
 
+  // This code mounts component, adds focus listener, unmounts component and removes listener.
   componentDidMount() {
     this.checkAndFetchChats();
     const { navigation } = this.props;
@@ -48,6 +48,7 @@ export default class SettingScreen extends Component {
     }
   }
 
+  // Gets the profile picture
   async get_profile_image() {
     const sessionToken = await AsyncStorage.getItem('whatsthat_session_token');
     const userID = await AsyncStorage.getItem('whatsthat_user_id');

@@ -2,7 +2,6 @@
 /* eslint-disable react/no-unused-state */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-use-before-define */
-/* eslint-disable import/no-extraneous-dependencies */
 import React, { Component } from 'react';
 import {
   View,
@@ -24,18 +23,17 @@ export default class HomeScreen extends Component {
     super(props);
 
     this.state = {
-      // search: '',
       allUsers: [],
       isLoading: false,
-      photos: {}, // Store user_id to profile image mapping
+      photos: {},
     };
 
     this.handleSearch = this.handleSearch.bind(this);
   }
 
+  // Search for all users, the search executes after typing more than 2 charecters
   async handleSearch(text) {
-    // this.setState({ search: text });
-    if (text.length >= 3) {
+    if (text.length >= 2) {
       this.setState({ isLoading: true });
       const token = await AsyncStorage.getItem('whatsthat_session_token');
       fetch(`http://localhost:3333/api/1.0.0/search?q=${text}`, {
@@ -63,6 +61,8 @@ export default class HomeScreen extends Component {
                 throw new Error('Network response was not ok');
               }
 
+              // It assigns the image URL to the user ID in the photos object,
+              // so it gets the profile picture of a user.
               const blob = await response.blob();
               const data = URL.createObjectURL(blob);
 
@@ -87,6 +87,7 @@ export default class HomeScreen extends Component {
     }
   }
 
+  // Sends a request to the api to add a contact and handles the response
   addContact = async (contact) => {
     this.setState({ submitted: true });
 
@@ -152,6 +153,7 @@ export default class HomeScreen extends Component {
     }
   };
 
+  // Renders all the users that are in the search query.
   renderItem = ({ item }) => {
     const userId = item.user_id;
     const {
@@ -224,6 +226,7 @@ export default class HomeScreen extends Component {
   }
 }
 
+// Stlying
 const styles = StyleSheet.create({
   itemContainer: {
     flex: 1,

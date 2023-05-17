@@ -3,7 +3,6 @@
 /* eslint-disable no-use-before-define */
 /* eslint-disable react/destructuring-assignment */
 /* eslint-disable react/prop-types */
-/* eslint-disable import/no-extraneous-dependencies */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { Component } from 'react';
 import {
@@ -49,10 +48,7 @@ class ChatScreen extends Component {
     }
   }
 
-  componentWillUnmount() {
-    clearInterval(this.sendScheduledDraftsInterval);
-  }
-
+  // Gets the draft messages that are in the async storage
   async getDrafts() {
     const { userID } = this.state;
     let userDrafts = await AsyncStorage.getItem(`drafts_${userID}`);
@@ -83,6 +79,7 @@ class ChatScreen extends Component {
       });
   }
 
+  // Deletes the draft messages that are in the async storage
   async deleteDraft(draftId) {
     const { userID } = this.state;
     const { drafts } = this.state;
@@ -100,6 +97,7 @@ class ChatScreen extends Component {
     });
   }
 
+  // Saves draft messages in the async storage based on UserID, so it stores for that specific user.
   async saveDraft() {
     const { userID, newMessage, scheduledDateTime } = this.state;
     if (!this.state.newMessage) {
@@ -124,6 +122,7 @@ class ChatScreen extends Component {
     this.setState({ newMessage: '' });
   }
 
+  // Sends messages to the api
   async sendMessage() {
     const { chat } = this.props.route.params;
     const sessionToken = await AsyncStorage.getItem('whatsthat_session_token');
@@ -210,6 +209,7 @@ class ChatScreen extends Component {
       });
   }
 
+  // Edits messages
   async editMessage(item) {
     const { chat } = this.props.route.params;
     const sessionToken = await AsyncStorage.getItem('whatsthat_session_token');
@@ -296,6 +296,7 @@ class ChatScreen extends Component {
       });
   }
 
+  // Deletes messages
   async deleteMessage(item) {
     const { chat } = this.props.route.params;
     const sessionToken = await AsyncStorage.getItem('whatsthat_session_token');
@@ -359,6 +360,8 @@ class ChatScreen extends Component {
       });
   }
 
+  // Renders the drafts in a modal, that has an edit mode.
+  // When in edit mode user can delete and edit the message and send.
   renderDraft = ({ item }) => {
     const { editMode, draftToEdit } = this.state;
 
@@ -410,6 +413,8 @@ class ChatScreen extends Component {
     );
   };
 
+  // This function renders a message component with different styles
+  // based on whos sending and recieving.
   renderMessage = ({ item }) => {
     const { userID } = this.state;
     const sender = item.author.user_id;
@@ -442,7 +447,7 @@ class ChatScreen extends Component {
           item.editMode = true;
           this.forceUpdate();
         }}
-        delayLongPress={500}
+        delayLongPress={300}
       >
         <Text style={styles.message}>{item.message}</Text>
       </TouchableOpacity>
@@ -466,7 +471,7 @@ class ChatScreen extends Component {
                 <Text style={styles.editButtonText}>Save</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.deleteButton}
+                style={styles.deleteEditButton}
                 onPress={() => {
                   this.deleteMessage(item);
                   item.editMode = false;
@@ -568,6 +573,7 @@ class ChatScreen extends Component {
     );
   }
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -754,6 +760,29 @@ const styles = StyleSheet.create({
   headerTextStyle: {
     color: 'white',
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  editButton: {
+    backgroundColor: '#20B2AA',
+    padding: 4,
+    borderRadius: 5,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  deleteEditButton: {
+    backgroundColor: '#e74c3c',
+    padding: 4,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 10,
     fontWeight: 'bold',
   },
 });

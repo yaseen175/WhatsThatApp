@@ -28,6 +28,7 @@ export default class SignUpScreen extends Component {
     this.onPressButton = this.onPressButton.bind(this);
   }
 
+  // Checks validation, sends user information to api and gets response.
   onPressButton() {
     const {
       email, password, firstName, lastName,
@@ -65,7 +66,7 @@ export default class SignUpScreen extends Component {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         first_name: firstName,
-        last_name: lastName, // Fixed typo: should be lastName instead of firstName
+        last_name: lastName,
         email,
         password,
       }),
