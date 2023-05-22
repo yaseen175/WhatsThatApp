@@ -295,23 +295,3 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
 });
-
-// async Search() {
-//   return fetch("http://localhost:3333/api/1.0.0/search?q="+allusers+ "&search_in="++"&limit="++"&offset="+, {
-//     headers: {
-//       "X-Authorization": await AsyncStorage.getItem(
-//         "whatsthat_session_token"
-//       ),
-//     },
-//   })
-//     .then((response) => response.json())
-//     .then((responseJson) => {
-//       this.setState({
-//         isLoading: false,
-//         contactsData: responseJson,
-//       });
-//     })
-//     .catch((error) => {
-//       console.log(error);
-//     });
-// }

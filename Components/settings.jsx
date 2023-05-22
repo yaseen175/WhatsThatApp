@@ -74,6 +74,8 @@ export default class SettingScreen extends Component {
 
   userData = async () => {
     try {
+      const { navigation } = this.props;
+
       const sessionToken = await AsyncStorage.getItem(
         'whatsthat_session_token',
       );
@@ -107,6 +109,7 @@ export default class SettingScreen extends Component {
           text1: 'Error',
           text2: 'Unauthorized',
         });
+        navigation.navigate('Signin');
         throw new Error('Unauthorized');
       } else if (response.status === 404) {
         Toast.show({
@@ -130,8 +133,11 @@ export default class SettingScreen extends Component {
     }
   };
 
+  // Updates profile function
   updateData = async () => {
     try {
+      const { navigation } = this.props;
+
       const sessionToken = await AsyncStorage.getItem(
         'whatsthat_session_token',
       );
@@ -203,6 +209,7 @@ export default class SettingScreen extends Component {
           text1: 'Error',
           text2: 'Unauthorized',
         });
+        navigation.navigate('Signin');
         throw new Error('Unauthorized');
       } else if (response.status === 403) {
         Toast.show({
